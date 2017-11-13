@@ -38,9 +38,11 @@ class dungeon():
 	def add_room(self, loc=(0, 0), size=1):
 		room = c_room.room(loc)
 		for i in range(size - 1):
-			newloc = random.choice(self.empty_neighbours(self.room_cells_global(room)))
-			room.extend(self.global_cd_to_room(newloc, room)[0])
-
+			if len(self.empty_neighbours(self.room_cells_global(room))) > 0:
+				newloc = random.choice(self.empty_neighbours(self.room_cells_global(room)))
+				room.extend(self.global_cd_to_room(newloc, room)[0])
+			else:
+				break
 		self.rooms.append(room)
 
 	@staticmethod
@@ -75,6 +77,29 @@ class dungeon():
 		return tuple([(xmin, ymin), (xmax, ymax)])
 
 	def __repr__(self):
+		def cell_repr(u, d, l, r, tag):
+			output = ['' for i in range(3)]
+			if u:
+				output[0] = '·   ·'
+			else:
+				output[0] = '·---·'
+
+			if d:
+				output[2] = '·   ·'
+			else:
+				output[2] = '·---·'
+
+			lwall, rwall = ('|', '|')
+
+			if l:
+				lwall = ' '
+			if r:
+				rwall = ' '
+
+			output[1] = '{} {} {}'.format(lwall, tag, rwall)
+
+			return output
+
 		bounds = self.bounds
 		xmin, ymin = bounds[0]
 		xmax, ymax = bounds[1]
@@ -82,17 +107,29 @@ class dungeon():
 		width = xmax - xmin + 1
 		height = ymax - ymin + 1
 
-		printmap = [[' ' for i in range(width)] for j in range(height)]
+		blankbox = [' ' * 5 for i in range(3)]
 
-		for room, symbol in zip(self.rooms, string.ascii_lowercase):
+		printmap = [[blankbox for i in range(width)] for j in range(height)]
+
+		for room, symbol in zip(self.rooms, string.ascii_lowercase + string.punctuation):
 			for cell in self.room_cells_global(room):
+				roomrepr = room.cell_borders(self.global_cd_to_room(cell, room)[0])
 				xc, yc = cell
 				x_local = xc - xmin
 				y_local = yc - ymin
-				printmap[y_local][x_local] = symbol
 
-		printmap[-ymin][-xmin] = printmap[-ymin][-xmin].upper()
+				if self.global_cd_to_room(cell, room)[0] == (0, 0):
+					printmap[y_local][x_local] = cell_repr(*roomrepr, symbol.upper())
+				else:
+					printmap[y_local][x_local] = cell_repr(*roomrepr, symbol)
 
 		printmap_r = printmap[::-1]
-		printmap_r_s = [''.join(x) for x in printmap_r]
-		return '\n'.join(printmap_r_s)
+
+		repr_out = ''
+
+		for row in printmap_r:
+			for i in range(len(row[0])):
+				line = ''.join([item[i] for item in row])
+				repr_out += line
+				repr_out += '\n'
+		return repr_out
