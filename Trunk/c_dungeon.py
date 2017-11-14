@@ -19,12 +19,11 @@ class dungeon():
 	@staticmethod
 	def neighbours(coord, diagonal=False):
 		cx, cy = coord
-		offsets = [(1, 0), (0, -1,), (0, 1), (-1, 0)]
+		offsets = [(1, 0), (0, -1), (0, 1), (-1, 0)]
 		if diagonal:
 			offsets += [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 		for xoff, yoff in offsets:
 				yield cx + xoff, cy + yoff
-		return
 
 	def empty_neighbours(self, cells, diagonal=False):
 		if not isinstance(cells[0], Iterable):
@@ -39,7 +38,7 @@ class dungeon():
 		room = c_room.room(loc)
 		for i in range(size - 1):
 			if len(self.empty_neighbours(self.room_cells_global(room))) > 0:
-				newloc = random.sample(self.empty_neighbours(self.room_cells_global(room)),1)[0]
+				newloc = random.choice(tuple(self.empty_neighbours(self.room_cells_global(room))))
 				room.extend(self.global_cd_to_room(newloc, room)[0])
 			else:
 				break
