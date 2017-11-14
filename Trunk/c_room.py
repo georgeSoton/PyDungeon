@@ -22,4 +22,4 @@ class room():
 		if (cell[0] + 1, cell[1]) in self.cells:
 			right = 1
 
-		return tuple([up, down, left, right])
+		return up, down, left, right

@@ -5,7 +5,7 @@ dungeon = c_dungeon.dungeon()
 
 dungeon.add_room((0, 0), random.randint(1, 10))
 for i in range(35):
-	start = random.choice(dungeon.empty_neighbours(dungeon.filledcells))
+	start = random.sample(dungeon.empty_neighbours(dungeon.filledcells),1)[0]
 	dungeon.add_room(start, random.randint(1, 10))
 
 print(dungeon)
