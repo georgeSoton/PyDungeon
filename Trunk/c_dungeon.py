@@ -57,14 +57,14 @@ class Dungeon:
 		up, down, left, right = '', '', '', ''
 
 		if (xc, yc + 1) in room.coords:
-			up = ' ' * 5
+			up = '+   +'
 		else:
-			up = ' --- '
+			up = '+---+'
 
 		if (xc, yc - 1) in room.coords:
-			down = ' ' * 5
+			down = '+   +'
 		else:
-			down = ' --- '
+			down = '+---+'
 
 		if (xc - 1, yc) in room.coords:
 			left = ' '
