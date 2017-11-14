@@ -8,7 +8,7 @@ class room():
 		self.cells.append(cell)
 
 	def cell_borders(self, cell):
-		up, down, left, right = (0, 0, 0, 0)
+		up, down, left, right = 0, 0, 0, 0
 
 		if (cell[0], cell[1] + 1) in self.cells:
 			up = 1
