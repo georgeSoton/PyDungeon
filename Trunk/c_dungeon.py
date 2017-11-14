@@ -38,7 +38,7 @@ class dungeon():
 		room = c_room.room(loc)
 		for i in range(size - 1):
 			if len(self.empty_neighbours(self.room_cells_global(room))) > 0:
-				newloc = random.sample(self.empty_neighbours(self.room_cells_global(room)),1)[0]
+				newloc = random.choice(tuple(self.empty_neighbours(self.room_cells_global(room))))
 				room.extend(self.global_cd_to_room(newloc, room)[0])
 			else:
 				break
