@@ -15,17 +15,17 @@ class Dungeon:
 		return set(self.cells.keys())
 
 	@staticmethod
-	def neighbours(coord, diagonal=False):
+	def neighbours(coord, check_diagonals=False):
 		cx, cy = coord
 		offsets = [(1, 0), (0, -1), (0, 1), (-1, 0)]
-		if diagonal:
+		if check_diagonals:
 			offsets += [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 		for xoff, yoff in offsets:
 				yield cx + xoff, cy + yoff
 
-	def empty_neighbours(self, coords, diagonal=False):
+	def empty_neighbours(self, coords, check_diagonals=False):
 		filled = self.filledcells
-		neighs_flat = {val for coord in coords for val in self.neighbours(coord, diagonal=diagonal) if val not in filled}
+		neighs_flat = {val for coord in coords for val in self.neighbours(coord, check_diagonals=check_diagonals) if val not in filled}
 		return neighs_flat
 
 	def add_room(self, loc=(0, 0), size=1):
@@ -48,7 +48,7 @@ class Dungeon:
 		xmax = max([coord[0] for coord in coords])
 		ymin = min([coord[1] for coord in coords])
 		ymax = max([coord[1] for coord in coords])
-		return (xmin, ymin, xmax, ymax)
+		return xmin, ymin, xmax, ymax
 
 	def coord_repr(self, coord):
 		xc, yc = coord
@@ -78,7 +78,7 @@ class Dungeon:
 		else:
 			right = '|'
 
-		return (up, down, left, right)
+		return up, down, left, right
 
 	def __repr__(self):
 		xmin, ymin, xmax, ymax = self.bounds
@@ -87,7 +87,7 @@ class Dungeon:
 
 		def rebase(coord):
 			xo, yo = coord
-			return (xo - xmin, yo - ymin)
+			return xo - xmin, yo - ymin
 
 		output_array = [[[' ' * 5 for i in range(3)] for w in range(width)] for h in range(height)]
 
