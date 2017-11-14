@@ -5,8 +5,10 @@ import random
 
 
 class Dungeon:
-	rooms = []
-	cells = {}
+
+	def __init__(self):
+		self.rooms = []
+		self.cells = {}
 
 	@property
 	def filledcells(self):
