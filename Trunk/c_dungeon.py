@@ -10,11 +10,7 @@ class dungeon():
 
 	@property
 	def filledcells(self):
-		pass
-
-	@filledcells.getter
-	def filledcells(self):
-		return [x for room in self.rooms for x in self.room_cells_global(room)]
+		return {x for room in self.rooms for x in self.room_cells_global(room)}
 
 	@staticmethod
 	def neighbours(coord, diagonal=False):
@@ -26,20 +22,17 @@ class dungeon():
 				yield cx + xoff, cy + yoff
 
 	def empty_neighbours(self, cells, diagonal=False):
-		if not isinstance(cells[0], Iterable):
-			cells = [cells]
-
 		filled = self.filledcells
-		neighs_flat = [val for cell in cells for val in self.neighbours(cell, diagonal=diagonal) if val not in filled]
+		neighs_flat = {val for cell in cells for val in self.neighbours(cell, diagonal=diagonal) if val not in filled}
 
-		return set(neighs_flat)
+		return neighs_flat
 
 	def add_room(self, loc=(0, 0), size=1):
 		room = c_room.room(loc)
 		for i in range(size - 1):
 			if len(self.empty_neighbours(self.room_cells_global(room))) > 0:
 				newloc = random.choice(tuple(self.empty_neighbours(self.room_cells_global(room))))
-				room.extend(self.global_cd_to_room(newloc, room)[0])
+				room.extend(self.glob_to_loc(newloc, room))
 			else:
 				break
 		self.rooms.append(room)
@@ -50,23 +43,22 @@ class dungeon():
 		Takes a room and returns the globalised coordinations of all the cells
 		within it
 		"""
-		xo, yo = room.origin
 		cells = room.cells
 
-		return [(x + xo, y + yo) for x, y in cells]
+		return {dungeon.loc_to_glob(cell,room) for cell in cells}
+
 
 	@staticmethod
-	def global_cd_to_room(cells, room):
+	def loc_to_glob(cell, room):
+		xo, yo = room.origin
+		return cell[0] + xo, cell[1] + yo
+
+	@staticmethod
+	def glob_to_loc(cell, room):
 		ox, oy = room.origin
-		if not isinstance(cells[0], Iterable):
-			cells = [cells]
-		return [(lx - ox, ly - oy) for lx, ly in cells]
+		return cell[0] - ox, cell[1] - oy
 
 	@property
-	def bounds(self):
-		pass
-
-	@bounds.getter
 	def bounds(self):
 		cells = self.filledcells
 		xmin = min([cell[0] for cell in cells])
@@ -112,12 +104,12 @@ class dungeon():
 
 		for room, symbol in zip(self.rooms, string.ascii_lowercase + string.punctuation):
 			for cell in self.room_cells_global(room):
-				roomrepr = room.cell_borders(self.global_cd_to_room(cell, room)[0])
+				roomrepr = room.cell_borders(self.glob_to_loc(cell, room))
 				xc, yc = cell
 				x_local = xc - xmin
 				y_local = yc - ymin
 
-				if self.global_cd_to_room(cell, room)[0] == (0, 0):
+				if self.glob_to_loc(cell, room) == (0, 0):
 					printmap[y_local][x_local] = cell_repr(*roomrepr, symbol.upper())
 				else:
 					printmap[y_local][x_local] = cell_repr(*roomrepr, symbol)
