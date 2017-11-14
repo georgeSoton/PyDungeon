@@ -1,16 +1,16 @@
 import c_room
-import itertools
+import c_cell
 import string
 import random
-from collections import Iterable
 
 
-class dungeon():
+class Dungeon:
 	rooms = []
+	cells = {}
 
 	@property
 	def filledcells(self):
-		return {x for room in self.rooms for x in self.room_cells_global(room)}
+		return set(self.cells.keys())
 
 	@staticmethod
 	def neighbours(coord, diagonal=False):
@@ -21,106 +21,87 @@ class dungeon():
 		for xoff, yoff in offsets:
 				yield cx + xoff, cy + yoff
 
-	def empty_neighbours(self, cells, diagonal=False):
+	def empty_neighbours(self, coords, diagonal=False):
 		filled = self.filledcells
-		neighs_flat = {val for cell in cells for val in self.neighbours(cell, diagonal=diagonal) if val not in filled}
-
+		neighs_flat = {val for coord in coords for val in self.neighbours(coord, diagonal=diagonal) if val not in filled}
 		return neighs_flat
 
 	def add_room(self, loc=(0, 0), size=1):
-		room = c_room.room(loc)
+		room = c_room.Room(loc)
+		self.cells[loc] = c_cell.Cell()
+
 		for i in range(size - 1):
-			if len(self.empty_neighbours(self.room_cells_global(room))) > 0:
-				newloc = random.choice(tuple(self.empty_neighbours(self.room_cells_global(room))))
-				room.extend(self.glob_to_loc(newloc, room))
+			if len(self.empty_neighbours(room.coords)) > 0:
+				newloc = random.choice(tuple(self.empty_neighbours(room.coords)))
+				self.cells[newloc] = c_cell.Cell()
+				room.extend(newloc)
 			else:
 				break
 		self.rooms.append(room)
 
-	@staticmethod
-	def room_cells_global(room):
-		"""
-		Takes a room and returns the globalised coordinations of all the cells
-		within it
-		"""
-		cells = room.cells
-
-		return {dungeon.loc_to_glob(cell,room) for cell in cells}
-
-
-	@staticmethod
-	def loc_to_glob(cell, room):
-		xo, yo = room.origin
-		return cell[0] + xo, cell[1] + yo
-
-	@staticmethod
-	def glob_to_loc(cell, room):
-		ox, oy = room.origin
-		return cell[0] - ox, cell[1] - oy
-
 	@property
 	def bounds(self):
-		cells = self.filledcells
-		xmin = min([cell[0] for cell in cells])
-		xmax = max([cell[0] for cell in cells])
-		ymin = min([cell[1] for cell in cells])
-		ymax = max([cell[1] for cell in cells])
-		return (xmin, ymin), (xmax, ymax)
+		coords = self.filledcells
+		xmin = min([coord[0] for coord in coords])
+		xmax = max([coord[0] for coord in coords])
+		ymin = min([coord[1] for coord in coords])
+		ymax = max([coord[1] for coord in coords])
+		return (xmin, ymin, xmax, ymax)
+
+	def coord_repr(self, coord):
+		xc, yc = coord
+		room = [r for r in self.rooms if coord in r.coords]
+		assert(len(room) == 1)
+		room = room[0]
+
+		up, down, left, right = '', '', '', ''
+
+		if (xc, yc + 1) in room.coords:
+			up = ' ' * 5
+		else:
+			up = ' --- '
+
+		if (xc, yc - 1) in room.coords:
+			down = ' ' * 5
+		else:
+			down = ' --- '
+
+		if (xc - 1, yc) in room.coords:
+			left = ' '
+		else:
+			left = '|'
+
+		if (xc + 1, yc) in room.coords:
+			right = ' '
+		else:
+			right = '|'
+
+		return (up, down, left, right)
 
 	def __repr__(self):
-		def cell_repr(u, d, l, r, tag):
-			output = ['' for i in range(3)]
-			if u:
-				output[0] = '·   ·'
-			else:
-				output[0] = '·---·'
-
-			if d:
-				output[2] = '·   ·'
-			else:
-				output[2] = '·---·'
-
-			lwall, rwall = ('|', '|')
-
-			if l:
-				lwall = ' '
-			if r:
-				rwall = ' '
-
-			output[1] = '{} {} {}'.format(lwall, tag, rwall)
-
-			return output
-
-		bounds = self.bounds
-		xmin, ymin = bounds[0]
-		xmax, ymax = bounds[1]
-
+		xmin, ymin, xmax, ymax = self.bounds
 		width = xmax - xmin + 1
 		height = ymax - ymin + 1
 
-		blankbox = [' ' * 5 for i in range(3)]
+		def rebase(coord):
+			xo, yo = coord
+			return (xo - xmin, yo - ymin)
 
-		printmap = [[blankbox for i in range(width)] for j in range(height)]
+		output_array = [[[' ' * 5 for i in range(3)] for w in range(width)] for h in range(height)]
 
 		for room, symbol in zip(self.rooms, string.ascii_lowercase + string.punctuation):
-			for cell in self.room_cells_global(room):
-				roomrepr = room.cell_borders(self.glob_to_loc(cell, room))
-				xc, yc = cell
-				x_local = xc - xmin
-				y_local = yc - ymin
+			for coord in room.coords:
+				xr, yr = rebase(coord)
+				up, down, left, right = self.coord_repr(coord)
+				output_array[yr][xr] = [up, '{} {} {}'.format(left, symbol, right), down]
 
-				if self.glob_to_loc(cell, room) == (0, 0):
-					printmap[y_local][x_local] = cell_repr(*roomrepr, symbol.upper())
-				else:
-					printmap[y_local][x_local] = cell_repr(*roomrepr, symbol)
+		output_array = reversed(output_array)
 
-		printmap_r = printmap[::-1]
+		output_string = ''
 
-		repr_out = ''
+		for row in output_array:
+			for ascii_row in range(len(row[0])):
+				output_string += ''.join([col[ascii_row] for col in row])
+				output_string += '\n'
 
-		for row in printmap_r:
-			for i in range(len(row[0])):
-				line = ''.join([item[i] for item in row])
-				repr_out += line
-				repr_out += '\n'
-		return repr_out
+		return output_string
