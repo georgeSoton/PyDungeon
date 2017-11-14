@@ -14,7 +14,7 @@ class dungeon():
 
 	@filledcells.getter
 	def filledcells(self):
-		return tuple(itertools.chain.from_iterable([self.room_cells_global(room) for room in self.rooms]))
+		return [x for room in self.rooms for x in self.room_cells_global(room)]
 
 	@staticmethod
 	def neighbours(coord, diagonal=False):
@@ -23,7 +23,7 @@ class dungeon():
 		if diagonal:
 			offsets += [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 		for xoff, yoff in offsets:
-				yield tuple([cx + xoff, cy + yoff])
+				yield cx + xoff, cy + yoff
 		return
 
 	def empty_neighbours(self, cells, diagonal=False):
@@ -33,13 +33,13 @@ class dungeon():
 		filled = self.filledcells
 		neighs_flat = [val for cell in cells for val in self.neighbours(cell, diagonal=diagonal) if val not in filled]
 
-		return tuple(set(neighs_flat))
+		return set(neighs_flat)
 
 	def add_room(self, loc=(0, 0), size=1):
 		room = c_room.room(loc)
 		for i in range(size - 1):
 			if len(self.empty_neighbours(self.room_cells_global(room))) > 0:
-				newloc = random.choice(self.empty_neighbours(self.room_cells_global(room)))
+				newloc = random.sample(self.empty_neighbours(self.room_cells_global(room)),1)[0]
 				room.extend(self.global_cd_to_room(newloc, room)[0])
 			else:
 				break
@@ -54,14 +54,14 @@ class dungeon():
 		xo, yo = room.origin
 		cells = room.cells
 
-		return tuple(tuple([x + xo, y + yo]) for x, y in cells)
+		return [(x + xo, y + yo) for x, y in cells]
 
 	@staticmethod
 	def global_cd_to_room(cells, room):
 		ox, oy = room.origin
 		if not isinstance(cells[0], Iterable):
 			cells = [cells]
-		return tuple([(lx - ox, ly - oy) for lx, ly in cells])
+		return [(lx - ox, ly - oy) for lx, ly in cells]
 
 	@property
 	def bounds(self):
@@ -74,7 +74,7 @@ class dungeon():
 		xmax = max([cell[0] for cell in cells])
 		ymin = min([cell[1] for cell in cells])
 		ymax = max([cell[1] for cell in cells])
-		return tuple([(xmin, ymin), (xmax, ymax)])
+		return (xmin, ymin), (xmax, ymax)
 
 	def __repr__(self):
 		def cell_repr(u, d, l, r, tag):
